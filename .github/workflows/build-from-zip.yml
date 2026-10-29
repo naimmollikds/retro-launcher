@@ -1,6 +1,7 @@
 name: Unzip and Build APK
 
 on:
+  workflow_dispatch:
   push:
     paths:
       - '*.zip'
