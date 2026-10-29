@@ -1,0 +1,60 @@
+name: Unzip and Build APK
+
+on:
+  push:
+    paths:
+      - '*.zip'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Find and Extract ZIP
+      run: |
+        # Finds any zip file in the repo and unzips it
+        ZIP_FILE=$(find . -maxdepth 1 -name "*.zip" | head -n 1)
+        if [ -n "$ZIP_FILE" ]; then
+          echo "Extracting $ZIP_FILE..."
+          unzip -o "$ZIP_FILE"
+          rm "$ZIP_FILE"
+        else
+          echo "No zip file found."
+          exit 1
+        fi
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Grant execute permission for gradlew
+      run: |
+        # Looks for gradlew in subfolders if nested
+        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+        if [ -n "$GRADLEW_PATH" ]; then
+          chmod +x "$GRADLEW_PATH"
+        fi
+
+    - name: Build APK with Gradle
+      run: |
+        GRADLEW_PATH=$(find . -name "gradlew" | head -n 1)
+        if [ -n "$GRADLEW_PATH" ]; then
+          DIR=$(dirname "$GRADLEW_PATH")
+          cd "$DIR"
+          ./gradlew assembleDebug
+        else
+          echo "Gradle wrapper not found!"
+          exit 1
+        fi
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug
+        path: |
+          **/build/outputs/apk/debug/*.apk
