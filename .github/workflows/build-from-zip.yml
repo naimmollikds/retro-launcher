@@ -27,7 +27,12 @@ jobs:
         run: |
           SETTINGS=$(find extracted -name "settings.gradle.kts" | head -n 1)
           cd "$(dirname "$SETTINGS")"
-          gradle assembleDebug --no-daemon --stacktrace
+          for i in 1 2 3; do
+            gradle assembleDebug --no-daemon --stacktrace && exit 0
+            echo "Build failed (attempt $i), retrying in 30 seconds..."
+            sleep 30
+          done
+          exit 1
 
       - uses: actions/upload-artifact@v4
         with:
